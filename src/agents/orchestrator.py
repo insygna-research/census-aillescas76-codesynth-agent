@@ -2,7 +2,7 @@ import os
 from typing import AsyncGenerator
 
 from google.adk.agents import BaseAgent
-from google.adk.sessions import InvocationContext
+from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event
 
 # Import sub-agent instances
@@ -30,26 +30,17 @@ class RequirementImplementationOrchestrator(BaseAgent):
     """
     def __init__(self):
         """Initializes the orchestrator with all necessary sub-agents."""
-        # Store sub-agents as attributes for clarity
-        self.req_analysis_agent = requirement_analyzer_agent
-        self.code_explore_agent = code_explorer_agent
-        self.plan_agent = implementation_planner_agent
-        self.code_gen_agent = code_generator_agent
-        self.code_review_agent = code_reviewer_agent
-        # self.test_agent = tester_agent # Commented out
-        self.refactor_agent = refactorer_agent
-        self.versioner_agent = versioner_agent # Instantiate the new agent
-
-        # Register sub-agents with the framework for proper event handling etc.
+        # BaseAgent is a pydantic model: sub-agents are registered through its
+        # constructor and read back from module scope, not set as attributes.
         super().__init__(sub_agents=[
-            self.req_analysis_agent,
-            self.code_explore_agent,
-            self.plan_agent,
-            self.code_gen_agent,
-            self.code_review_agent,
-            # self.test_agent, # Commented out
-            self.refactor_agent,
-            self.versioner_agent # Register the new agent
+            requirement_analyzer_agent,
+            code_explorer_agent,
+            implementation_planner_agent,
+            code_generator_agent,
+            code_reviewer_agent,
+            # tester_agent, # Commented out
+            refactorer_agent,
+            versioner_agent,
         ], name="requirement_implementation_orchestrator")
 
     async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
@@ -57,7 +48,7 @@ class RequirementImplementationOrchestrator(BaseAgent):
         Implements the custom logic for the requirement implementation workflow.
         """
         print("\n--- Starting Requirement Analysis ---")
-        async for event in self.req_analysis_agent.run_async(ctx):
+        async for event in requirement_analyzer_agent.run_async(ctx):
             yield event
         print("--- Requirement Analysis Done ---")
         print(f"State['requirement_details']: {ctx.session.state.get('requirement_details')}")
@@ -68,7 +59,7 @@ class RequirementImplementationOrchestrator(BaseAgent):
             print("\n--- Starting Code Exploration ---")
             # Pass the path to the explorer agent, potentially via state or context modification if needed
             # ctx.session.state["codebase_path"] = ctx.session.state.get("initial_codebase_path") # Example
-            async for event in self.code_explore_agent.run_async(ctx):
+            async for event in code_explorer_agent.run_async(ctx):
                 yield event
             print("--- Code Exploration Done ---")
             print(f"State['code_context']: {ctx.session.state.get('code_context')}")
@@ -78,13 +69,13 @@ class RequirementImplementationOrchestrator(BaseAgent):
             ctx.session.state["code_context"] = "No existing codebase provided or explored."
 
         print("\n--- Starting Implementation Planning ---")
-        async for event in self.plan_agent.run_async(ctx):
+        async for event in implementation_planner_agent.run_async(ctx):
             yield event
         print("--- Implementation Planning Done ---")
         print(f"State['implementation_plan']: {ctx.session.state.get('implementation_plan')}")
 
         print("\n--- Starting Code Generation ---")
-        async for event in self.code_gen_agent.run_async(ctx):
+        async for event in code_generator_agent.run_async(ctx):
             yield event
         print("--- Code Generation Done ---")
         generated_paths = ctx.session.state.get('generated_code_paths') # Get paths for check
@@ -93,7 +84,7 @@ class RequirementImplementationOrchestrator(BaseAgent):
         # Add the Code Review Step here
         if generated_paths: # Only run review if code was generated
             print("\n--- Starting Code Review ---")
-            async for event in self.code_review_agent.run_async(ctx):
+            async for event in code_reviewer_agent.run_async(ctx):
                 yield event
             print("--- Code Review Done ---")
             print(f"State['code_review_summary']: {ctx.session.state.get('code_review_summary')}")
@@ -113,7 +104,7 @@ class RequirementImplementationOrchestrator(BaseAgent):
                  print(f"Added 'project_path': {project_path_for_git} to session state for versioning.")
 
             print("\n--- Starting Versioning ---")
-            async for event in self.versioner_agent.run_async(ctx):
+            async for event in versioner_agent.run_async(ctx):
                 yield event
             print("--- Versioning Done ---")
             print(f"State['versioning_summary']: {ctx.session.state.get('versioning_summary')}")
@@ -130,7 +121,7 @@ class RequirementImplementationOrchestrator(BaseAgent):
         # #      return # Exit the workflow if no code was generated
 
         # # print("\n--- Starting Testing ---")
-        # # # async for event in self.test_agent.run_async(ctx):
+        # # # async for event in tester_agent.run_async(ctx):
         # #     yield event
         # # test_results = ctx.session.state.get("test_results", {})
         # # print("--- Testing Done ---")
@@ -143,14 +134,14 @@ class RequirementImplementationOrchestrator(BaseAgent):
         # while test_results.get("status", "UNKNOWN").upper() != "PASS" and attempt < MAX_REFACTOR_ATTEMPTS:
         #     attempt += 1
         #     print(f"\n--- Tests Failed/Errored/Unknown. Starting Refactoring Attempt {attempt}/{MAX_REFACTOR_ATTEMPTS} ---")
-        #     async for event in self.refactor_agent.run_async(ctx):
+        #     async for event in refactorer_agent.run_async(ctx):
         #         yield event
         #     print(f"--- Refactoring Attempt {attempt} Done ---")
         #     # Assuming refactor agent updates files in place or updates 'generated_code_paths'
         #     print(f"State['generated_code_paths' after refactor]: {ctx.session.state.get('generated_code_paths')}")
         #
         #     print(f"\n--- Re-running Tests after Refactoring Attempt {attempt} ---")
-        #     async for event in self.test_agent.run_async(ctx): # Re-run tests
+        #     async for event in tester_agent.run_async(ctx): # Re-run tests
         #         yield event
         #     test_results = ctx.session.state.get("test_results", {}) # Update results
         #     print(f"--- Re-Testing Done (Attempt {attempt}) ---")

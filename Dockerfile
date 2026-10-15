@@ -11,6 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 # Set the port the application will run on (must match CMD and docker-compose)
 ENV PORT=8080
+# src/ for the agents package, /app for the src.custom_tools imports
+ENV PYTHONPATH=/app:/app/src
 
 # Set the working directory in the container
 WORKDIR /app
@@ -36,13 +38,11 @@ EXPOSE ${PORT}
 
 # Define the command to run the application
 # This command runs when the container launches
-# Uses uvicorn to serve the FastAPI application defined in src/main.py
+# Uses uvicorn to serve the ADK API server defined in src/server.py
+# (src/main.py is the command-line runner and serves nothing)
 # --host 0.0.0.0: Makes the server accessible from outside the container
 # --port ${PORT}: Specifies the port to run on (using the ENV variable)
-# --reload: Enable auto-reload for development (remove this for production)
-# Adjust 'src.main:app' if your entry point file or FastAPI app instance is named differently
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "${PORT}", "--reload"]
-
-# For Production:
-# Remove --reload for better performance and stability
-# CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "${PORT}"]
+# Run through a shell so ${PORT} is expanded: the exec (JSON) form passes it to
+# uvicorn literally, which exits with "'${PORT}' is not a valid integer".
+# exec keeps uvicorn as PID 1 so it receives SIGTERM. No --reload: that is for development.
+CMD ["sh", "-c", "exec uvicorn src.server:app --host 0.0.0.0 --port \"${PORT:-8080}\""]

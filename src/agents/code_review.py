@@ -1,13 +1,13 @@
 import os
 from google.adk.agents import LlmAgent
-from google.adk.tools import Tool
+from typing import Callable
 
 # Import necessary tools
 # Adjust the import path based on your project structure
 from src.custom_tools import read_file # Ensure this import is present and correct
 
 # Define the tools the agent can use
-code_review_tools: list[Tool] = [read_file] # Add read_file here
+code_review_tools: list[Callable] = [read_file] # Add read_file here
 
 # Define the Code Review Agent
 code_reviewer_agent = LlmAgent(

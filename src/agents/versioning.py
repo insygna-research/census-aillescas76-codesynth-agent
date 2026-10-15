@@ -1,6 +1,6 @@
 import os
 from google.adk.agents import LlmAgent
-from google.adk.tools import Tool
+from typing import Callable
 
 # Import necessary tools
 # Assuming custom_tools is in the parent directory 'src' relative to 'src/agents'
@@ -12,7 +12,7 @@ except ImportError:
 
 
 # Define the tools the agent can use
-versioning_tools: list[Tool] = [git_init, git_add, git_commit]
+versioning_tools: list[Callable] = [git_init, git_add, git_commit]
 
 # Define the Versioning Agent
 versioner_agent = LlmAgent(

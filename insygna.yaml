@@ -23,3 +23,10 @@ tags:
   - "insygna-census"
   - "coding"
   - "python"
+runtime:
+  app_port: 8080
+env:
+  defaults:
+    GOOGLE_GENAI_USE_VERTEXAI: "FALSE"
+  required_secrets:
+    - GOOGLE_API_KEY
