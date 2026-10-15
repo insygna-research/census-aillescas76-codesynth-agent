@@ -18,6 +18,8 @@ services:
     # For production, you might remove this volume mount
     volumes:
       - ./src:/app/src
+      # Keeps a Gemini API key entered on the agent's first page across restarts
+      - codesynth-data:/app/data
     # Load environment variables from a .env file located in the same directory
     # Recommended for managing secrets and configuration securely
     env_file:
@@ -41,6 +43,7 @@ services:
   #   volumes:
   #     - postgres_data:/var/lib/postgresql/data
 
-# Define named volumes (optional, e.g., for database persistence)
-# volumes:
-#   postgres_data:
+# Define named volumes
+volumes:
+  codesynth-data:
+  # postgres_data:

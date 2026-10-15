@@ -28,5 +28,10 @@ runtime:
 env:
   defaults:
     GOOGLE_GENAI_USE_VERTEXAI: "FALSE"
-  required_secrets:
-    - GOOGLE_API_KEY
+# Not a required secret: without GOOGLE_API_KEY the agent still starts and its first
+# page asks for a key, which it keeps on this volume.
+storage:
+  volumes:
+    - name: codesynth-data
+      mount: /app/data
+      size: 10Gi
